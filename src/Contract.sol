@@ -98,7 +98,7 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
 
     /// @notice Current allocation used to determine payout % for winners. In bips.
     /// @dev sum must not exceed 10_000 || 100%
-    uint256[] public raffleAllocations;
+    mapping(uint256 => uint256[]) public raffleAllocations;
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -156,24 +156,6 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
         manager = _newManager;
     }
 
-    /// @notice set allocation for raffle payouts
-    /// @param _newAllocations new raffle allocations
-    function setAllocation(uint256[] memory _newAllocations) external onlyManager {
-        // store total first, starts at 0
-        uint256 total;
-
-        // fetch sum of _newAllocations
-        for (uint256 i; i < _newAllocations.length; i++) {
-            total += _newAllocations[i];
-        }
-
-        // make sure sum of _newAllocations is equal to our representation of 100%
-        require(total == DIVISOR_BIPS, "!INPUT");
-
-        // update raffle allocations
-        raffleAllocations = _newAllocations;
-    }
-
     /// @notice set minimum amount of time that must elapse before another draw can occur
     function setMinEpochLength(uint256 _newLength) external onlyManager {
         minEpochLength = _newLength;
@@ -209,13 +191,26 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
     /* -------------------------------------------------------------------------- */
 
     /// @notice draw for winners if ready, callable by anyone
-    function draw() external onlyWhenReady {
-        requestRandomness(chainlinkHash, chainlinkFee);
-        // create a colony where winning shrooms can collect their winnings
-        Colony colony = new Colony(payoutToken);
+    function draw(uint256[] memory allocations) external onlyWhenReady onlyManager {
+
+        // make sure sum of allocs is 100%
+        uint256 sum;
+
+        for(uint256 i; i < allocations.length; i++) {
+            sum += allocations[i];
+        }
+        
+        require(sum == DIVISOR_BIPS, "!ALLOC");
 
         // fetch draw id, since arrays start at 0, raffles.length will suffice
         uint256 drawId = raffles.length;
+
+        raffleAllocations[drawId] = allocations;
+
+        requestRandomness(chainlinkHash, chainlinkFee);
+
+        // create a colony where winning shrooms can collect their winnings
+        Colony colony = new Colony(payoutToken);
 
         // update length for drawing
         raffles[drawId].length = length;

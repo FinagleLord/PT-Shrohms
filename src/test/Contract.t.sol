@@ -9,7 +9,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract SampleERC20 is ERC20("SS","SS") {
-
+    function mint(address to, uint256 amount) public {
+        _mint(to,amount);
+    }
 }
 contract SampleERC721 is ERC721("77","77") {
     function mint(address to, uint256 tokenId) public {
@@ -30,36 +32,36 @@ contract ContractTest is DSTest {
     address LINK_WHALE = 0x98C63b7B319dFBDF3d811530F2ab9DfE4983Af9D;
     address LINK_ADDRESS = 0x514910771AF9Ca656af840dff83E8264EcF986CA;
 
+    uint256 NUMBER_OF_PLAYERS = 10;
 
-    address[] players = [
-        address(100),
-        address(101),
-        address(102),
-        address(103),
-        address(104),
-        address(105),
-        address(106),
-        address(107),
-        address(108),
-        address(109),
-        address(110),
-        address(111),
-        address(112),
-        address(113),
-        address(114),
-        address(115),
-        address(116),
-        address(117),
-        address(118),
-        address(119)
-    ];
+    address[] players;
+    //  = [
+    //     // address(100),
+    //     // address(101),
+    //     // address(102),
+    //     // address(103),
+    //     // address(104),
+    //     // address(105),
+    //     // address(106),
+    //     // address(107),
+    //     // address(108),
+    //     // address(109),
+    //     // address(110),
+    //     // address(111),
+    //     // address(112),
+    //     // address(113),
+    //     // address(114),
+    //     // address(115),
+    //     // address(116),
+    //     // address(117),
+    //     // address(118),
+    //     // address(119)
+    // ];
 
     Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     PTShrohms pts;
 
-    SampleERC20 serc20;
-    SampleERC721 serc721;
-
+    SampleERC721 shrohms;
     SampleERC20 payoutToken;
 
     // function test_me_hard() public {
@@ -77,13 +79,13 @@ contract ContractTest is DSTest {
 
     function setUp() public {
 
-        serc20 = new SampleERC20();
-        serc721 = new SampleERC721();
+        payoutToken = new SampleERC20();
+        shrohms = new SampleERC721();
 
         payoutToken = new SampleERC20();
 
-        IERC20 _payoutToken = IERC20(address(serc20));
-        IERC721 _shrohms = IERC721(address(serc721));
+        IERC20 _payoutToken = IERC20(address(payoutToken));
+        IERC721 _shrohms = IERC721(address(shrohms));
         uint256 _minEpochLength = 0;
         uint256 _chainlinkFee = 2 ether;
         bytes32 _chainlinkHash = 0xAA77729D3466CA35AE8D28B3BBAC7CC36A5031EFDC430821C02BC31A238AF445;
@@ -91,7 +93,7 @@ contract ContractTest is DSTest {
         address _link = LINK_ADDRESS;
         uint256 _length = 10;
 
-        mintNFTToPlayers();
+        mintOneNFTToEachPlayer();
 
         // add link to deployed contracts
 
@@ -113,19 +115,45 @@ contract ContractTest is DSTest {
 
     function test_drawing() public {
 
+        // 1) user holds an NFT 
+        // we setup 10 accounts each holding 1 nft
+        // mintOneNFTToEachPlayer();
+
+        // uint256 amount = 100e18;
+        // 2) treasury deposits accrued funds and calls draw()
+        // we fund the contract with Payout Tokens
+        // payoutToken.mint(address(pts),amount);
+
+        // pts.draw();
+
         
 
-        // transfer/mint payout tokens in (mimicking wut treasury will be doing)
+        // 3) treasury updates allocations, IE amount weight for each of the 10 winner
+        // ie if there's 10 winners, each key in the array with length 10 is relating to its counterpart
 
-        // call draw()
+        // uint256[] memory _newAllocations = [
+        //     1000,
+        //     1000,
+        //     1000,
+        //     1000,
+        //     1000,
+        //     1000,
+        //     1000,
+        //     1000,
+        //     1000,
+        //     1000
+        // ];
+        // pts.setAllocation(_newAllocations);
+        
 
-        // check wut nfts won the raffle, and make sure sum of winnings is = or less than
-        // raffle "amount"
+        // 4) drawing should decide 10 winners, eached with equal winnings
 
-        //  make sure user cannot claim twice
+        // 5) make sure only winners can claim
 
-        transferLink(address(this),100e18);
-        require(IERC20(LINK_ADDRESS).balanceOf(address(this)) == 100e18);
+        // 6) make sure only non claimed winners can claim
+
+        // transferLink(address(this),100e18);
+        // require(IERC20(LINK_ADDRESS).balanceOf(address(this)) == 100e18);
 
         assertTrue(true);
     }
@@ -134,6 +162,11 @@ contract ContractTest is DSTest {
     /*                                HELPERS                                 */
     /* ---------------------------------------------------------------------- */
 
+    function setPlayerList(uint256 ix) public {
+        for (uint256 i; i < ix; i ++) {
+            players[i] = address(bytes32(100+i));
+        }
+    }
 
     function transferLink(address to, uint256 amount) public {
         vm.startPrank(LINK_WHALE);
@@ -141,15 +174,18 @@ contract ContractTest is DSTest {
         vm.stopPrank();
     }
 
-    function mintNFTToPlayers() public {
+    function mintOneNFTToEachPlayer() public {
         for (uint256 i; i < players.length; i++) {
-            serc721.mint(players[i],i+1);
+            shrohms.mint(players[i],i+1);
+            // require(serc721.ownerOf(i+1) == players[i]);
         }
     }
 
-
     function test_story() public {
-        
+        // 1) user holds an NFT
+        // mintOneNFTToAllEachPlayer();
+
+        // 2) 
     }
 
     
