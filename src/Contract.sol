@@ -194,6 +194,11 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
         chainlinkHash = _chainlinkHash;
     }
 
+    /// @notice set the amount of winners for rounds going forward
+    function setLength(uint256 _newLength) external onlyManager {
+        length = _newLength;
+    }
+
     /// @notice pull unclaimed winnings from an old colony
     function refund(uint256 drawId) external onlyManager {
         payoutToken.safeTransferFrom(address(drawToColony[drawId]), manager, payoutToken.balanceOf(address(this)));
@@ -211,6 +216,9 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
 
         // fetch draw id, since arrays start at 0, raffles.length will suffice
         uint256 drawId = raffles.length;
+
+        // update length for drawing
+        raffles[drawId].length = length;
 
         // map drawing to newly created colony
         drawToColony[drawId] = colony;
