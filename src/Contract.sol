@@ -26,14 +26,13 @@ contract Colony {
         token.approve(msg.sender, type(uint256).max);
     }
 }
-
 contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
 
     /* -------------------------------------------------------------------------- */
     /*                                DEPENDENCIES                                */
     /* -------------------------------------------------------------------------- */
 
-    using SafeERC20 for IERC20;
+    // using SafeERC20 for IERC20;
 
     /* -------------------------------------------------------------------------- */
     /*                                  CONSTANTS                                 */
@@ -183,7 +182,7 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
 
     /// @notice pull unclaimed winnings from an old colony
     function refund(uint256 drawId) external onlyManager {
-        payoutToken.safeTransferFrom(address(drawToColony[drawId]), manager, payoutToken.balanceOf(address(this)));
+        payoutToken.transferFrom(address(drawToColony[drawId]), manager, payoutToken.balanceOf(address(this)));
     }
 
     /* -------------------------------------------------------------------------- */
@@ -219,7 +218,7 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
         drawToColony[drawId] = colony;
 
         // push and payout tokens to the new colony
-        payoutToken.safeTransfer(address(colony), payoutToken.balanceOf(address(this)));
+        payoutToken.transfer(address(colony), payoutToken.balanceOf(address(this)));
 
         // emit Draw event
         emit Draw(msg.sender);
@@ -256,7 +255,7 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
         }
 
         // push users payout
-        payoutToken.safeTransferFrom(address(drawToColony[drawId]), msg.sender, totalWinnings);
+        payoutToken.transferFrom(address(drawToColony[drawId]), msg.sender, totalWinnings);
     }
 
     /* -------------------------------------------------------------------------- */
@@ -266,12 +265,12 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
     /// @notice calculates up to 10 winners, from a single chainlink randomness seed
     function calculateWinners(
         uint256 randomness, 
-        uint256 length
+        uint256 amountOfWinners
     ) internal pure returns (uint256[10] memory winners) {
         // make sure length doesn't not surpass max winners
-        require(length <= 10, "!LENGTH");
+        require(amountOfWinners <= 10, "!amountOfWinners");
         // update randomness for each winning slot
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < amountOfWinners; i++) {
             winners[i] = uint256(keccak256(abi.encode(randomness))) % shrohmSupply + 1;
             randomness = uint256(keccak256(abi.encode(randomness))) % shrohmSupply + 1;
         }
@@ -286,7 +285,7 @@ contract PTShrohms is VRFConsumerBase, ReentrancyGuard {
         uint256[10] memory winners = calculateWinners(raffles[drawId].randomness, raffles[drawId].length);
         // return if "tokenId" is a winner
         for (uint256 i; i < winners.length; i++) {
-            if (winners[i] == tokenId) return (true, raffleAllocations[i]);
+            if (winners[i] == tokenId) return (true, raffleAllocations[drawId][i]);
         }
     }
 
